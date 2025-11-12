@@ -1,0 +1,28 @@
+.cart-container {
+  background: #fff;
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  background: rgba(255, 255, 255, 0.85);  /* blanco con algo de transparencia */
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.cart-container h2 {
+  font-weight: bold;
+}
+
+.cart-container hr {
+  border-top: 1px solid #eee;
+}
+
+/* Tarjetas en lista */
+.card {
+  border: none;
+  border-radius: 8px;
+}
+
+.card-title {
+  font-size: 1.2rem;
+}

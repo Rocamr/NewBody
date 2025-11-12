@@ -1,0 +1,53 @@
+
+/* catalogo.css */
+/* Contenedor principal, con semitransparencia para resaltar sobre el fondo */
+.catalog-container {
+  background: #fff;
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  background: rgba(255, 255, 255, 0.85);  /* blanco con algo de transparencia */
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+/* Título */
+.catalog-container h2 {
+  position: relative;
+  color: green;
+  z-index: 1;
+}
+
+/* Grid de productos */
+.catalog-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+.background-panel {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+/* Para adaptarlo en móviles */
+@media (max-width: 768px) {
+  .catalog-container {
+    margin: 20px auto;
+    padding: 15px;
+  }
+}
+body::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: url("./logoim.png") no-repeat center center;
+  background-size: contain;
+  opacity: 0.1; /* Marca de agua suave */
+  pointer-events: none;
+  z-index: 0;
+}
+

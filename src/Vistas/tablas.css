@@ -1,0 +1,204 @@
+/* Fondo de la página */
+body {
+    background-color: #f3eae2;
+    font-family: 'Arial', sans-serif;
+}
+
+/* Estilos para la tabla completa */
+.table {
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 1rem;
+    color: #000000;
+    background-color: #fff;
+    border-color: #251863;
+    border-style: solid;
+    overflow: hidden;
+}
+td.descripcion:hover {
+    white-space: normal;
+    overflow: visible;
+    position: relative;
+    z-index: 1;
+    background: white;
+  }
+  
+/* Estilo de encabezado de tabla */
+.table thead th {
+    color: #001663;
+    background-color: #aebff7;
+    border-color: #251863;
+}
+
+/* Estilo para celdas de la tabla */
+.table tbody td {
+    padding: 10px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 0.95rem;
+    color: #000000;
+    border-color: #251863;
+}
+
+/* Alternar colores de las filas */
+.table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.table tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Bordes suaves para celdas */
+.table td,
+.table th {
+    border: 1px solid #ddd;
+}
+
+/* Estilo para las imágenes en la tabla */
+.table tbody td img {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+}
+
+/* Estilo para botones dentro de la tabla */
+.buttonEA {
+    background-color: #251863;
+    color: #ffffff;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.buttonEA:hover {
+    background-color: #3d1b8a;
+}
+
+/* Estilo de los botones de paginación */
+.pagination button,
+.paginacionBtn {
+    background-color: #251863;
+    color: #ffffff;
+    border: none;
+    padding: 6px 12px;
+    margin: 0 5px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.paginacionBtn:hover {
+    background-color: #3d1b8a;
+}
+
+/* Desactivar botón de paginación */
+.paginacionBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+@media (max-width: 768px) {
+    h1, h2, h3 {
+      font-size: 1.5rem;
+    }
+    
+    .buttonEA {
+      padding: 4px 8px;
+    }
+    
+    .table tbody td {
+      font-size: 0.85rem;
+    }
+  }
+  /* Fondo de la página */
+body {
+    background-color: #f3eae2;
+    font-family: 'Arial', sans-serif;
+}
+
+/* Estilos para la tabla completa */
+.table-custom {
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 1rem;
+    color: #000;
+    background-color: #fff;
+    border: 1px solid #251863;
+    overflow: hidden;
+}
+
+/* Encabezado de tabla */
+.table-custom thead th {
+    color: #001663;
+    background-color: #aebff7;
+    border: 1px solid #251863;
+}
+
+/* Celdas de la tabla */
+.table-custom tbody td {
+    padding: 10px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 0.95rem;
+    color: #000;
+    border: 1px solid #251863;
+}
+
+/* Alternar colores de filas */
+.table-custom tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+.table-custom tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Imagenes en la tabla */
+.table-custom tbody td img {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+}
+
+/* Botones de la tabla (editar) */
+.buttonEA {
+    background-color: #251863;
+    color: #fff;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.buttonEA:hover {
+    background-color: #3d1b8a;
+}
+
+/* Botones de paginación */
+.paginacionBtn {
+    background-color: #251863;
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    margin: 0 5px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.paginacionBtn:hover {
+    background-color: #3d1b8a;
+}
+.paginacionBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Media queries para pantallas pequeñas */
+@media (max-width: 768px) {
+    h1, h2, h3 {
+        font-size: 1.5rem;
+    }
+    .buttonEA {
+        padding: 4px 8px;
+    }
+    .table-custom tbody td {
+        font-size: 0.85rem;
+    }
+}

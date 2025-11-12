@@ -1,0 +1,25 @@
+/* src/components/Extras/footer.css */
+.footer {
+  background-color: #222;
+  color: #fff;
+  text-align: center;
+  padding: 20px 0;
+  margin-top: 40px;
+}
+
+.footer .social-icons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  font-size: 1.5rem;
+  margin: 10px 0;
+}
+
+.footer a {
+  color: #fff;
+  transition: color 0.3s;
+}
+
+.footer a:hover {
+  color: #00d084;
+}
