@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // Configuración de Firebase usando variables de entorno
@@ -13,17 +14,15 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const storage = getStorage(app); 
+const auth = getAuth(app);
+const storage = getStorage(app);
 
-// Función para subir imágenes a Firebase Storage
 const uploadImageToStorage = async (file, folderName) => {
   const storageRef = ref(storage, `${folderName}/${file.name}`);
   await uploadBytes(storageRef, file);
-  const downloadURL = await getDownloadURL(storageRef);
-  return downloadURL;
+  return await getDownloadURL(storageRef);
 };
 
-export { app,  db, storage, uploadImageToStorage };
+export { app, db, auth, storage, uploadImageToStorage };

@@ -6,146 +6,172 @@ import {
   ModalFooter,
   Button
 } from "reactstrap";
-import { LanguageContext } from "./LanguageContext"; // Ajusta según tu ruta
+import { LanguageContext } from "./LanguageContext";
 import "./modal.css";
+import { translations } from "./extras";
+
+// Sanitizador muy simple para prevenir inyección accidental
+const safeText = (value) =>
+  typeof value === "string"
+    ? value.replace(/[<>]/g, "") // evita mínimo HTML injection
+    : typeof value === "number" || typeof value === "boolean"
+    ? String(value)
+    : "-";
+
+// Verifica si una ruta de imagen es segura
+const isSafeImageUrl = (url) => {
+  if (typeof url !== "string") return false;
+  try {
+    const u = new URL(url, window.location.origin);
+    // permitimos http, https y rutas relativas
+    return ["http:", "https:", "data:"].includes(u.protocol);
+  } catch {
+    return false;
+  }
+};
 
 function ModalDetalles({ isOpen, closeModal, elemento }) {
   const { language } = useContext(LanguageContext);
-  const t = {
-    es: {
-      orderDetails: "Detalles de la Orden",
-      productDetails: "Detalles del Producto",
-      buyerInfo: "Información del Comprador",
-      name: "Nombre",
-      email: "Email",
-      phone: "Teléfono",
-      address: "Dirección",
-      paymentMethod: "Método de Pago",
-      date: "Fecha",
-      total: "Total",
-      products: "Productos",
-      quantity: "Cantidad",
-      unitPrice: "Unitario",
-      productTotal: "Total",
-      noProducts: "No hay productos.",
-      description: "Descripción",
-      ingredients: "Ingredientes",
-      accept: "Aceptar",
-      notRegistered: "No registrado"
-    },
-    en: {
-      orderDetails: "Order Details",
-      productDetails: "Product Details",
-      buyerInfo: "Buyer Information",
-      name: "Name",
-      email: "Email",
-      phone: "Phone",
-      address: "Address",
-      paymentMethod: "Payment Method",
-      date: "Date",
-      total: "Total",
-      products: "Products",
-      quantity: "Quantity",
-      unitPrice: "Unit Price",
-      productTotal: "Total",
-      noProducts: "No products.",
-      description: "Description",
-      ingredients: "Ingredients",
-      accept: "Accept",
-      notRegistered: "Not registered"
-    }
-  }[language];
+  const t = translations[language] || {};
 
-  if (!isOpen) return null;
+  if (!isOpen || !elemento) return null;
 
   const isOrder = Array.isArray(elemento?.productos);
-  let dateStr = t.notRegistered;
 
+  /** ------------------------------
+   *   Fecha segura
+   * ------------------------------ */
+  let dateStr = t.notRegistered || "-";
   if (isOrder && elemento.fecha) {
-    dateStr =
-      typeof elemento.fecha.toDate === "function"
-        ? elemento.fecha.toDate().toLocaleDateString()
-        : new Date(elemento.fecha).toLocaleDateString();
+    try {
+      const fechaFinal =
+        typeof elemento.fecha.toDate === "function"
+          ? elemento.fecha.toDate()
+          : new Date(elemento.fecha);
+
+      if (!isNaN(fechaFinal.getTime())) {
+        dateStr = fechaFinal.toLocaleDateString();
+      }
+    } catch {
+      dateStr = t.notRegistered || "-";
+    }
   }
 
   return (
     <Modal isOpen={true} toggle={closeModal} backdrop="static">
       <ModalHeader toggle={closeModal}>
-        {isOrder ? t.orderDetails : t.productDetails}
+        {isOrder ? safeText(t.detalles.orderDetails) : safeText(t.detalles.productDetails)}
       </ModalHeader>
 
       <ModalBody className="cuerpoModal">
         <div className="container">
           {isOrder ? (
+            /** ------------------------------
+             *   MODO ORDEN / PEDIDO
+             * ------------------------------ */
             <div className="row mb-3">
               <div className="col-6">
-                <h5>{t.buyerInfo}</h5>
-                <p><strong>{t.name}:</strong> {elemento.buyer?.name || "-"}</p>
+                <h5>{safeText(t.detalles.buyerInfo)}</h5>
+
+                <p><strong>{t.detalles.name}:</strong> {safeText(elemento.buyer?.name)}</p>
+
                 {elemento.buyer?.contactType === "email" ? (
-                  <p><strong>{t.email}:</strong> {elemento.buyer.contactValue}</p>
+                  <p><strong>{t.detalles.email}:</strong> {safeText(elemento.buyer?.contactValue)}</p>
                 ) : (
-                  <p><strong>{t.phone}:</strong> {elemento.buyer.contactValue}</p>
+                  <p><strong>{t.detalles.phone}:</strong> {safeText(elemento.buyer?.contactValue)}</p>
                 )}
-                <p><strong>{t.address}:</strong> {elemento.buyer?.address || "-"}</p>
-                <p><strong>{t.paymentMethod}:</strong> {elemento.buyer?.paymentMethod || "-"}</p>
-                <p><strong>{t.date}:</strong> {dateStr}</p>
-                <p><strong>{t.total}:</strong> ${elemento?.total}</p>
+
+                <p><strong>{t.detalles.address}:</strong> {safeText(elemento.buyer?.address)}</p>
+                <p><strong>{t.detalles.paymentMethod}:</strong> {safeText(elemento.buyer?.paymentMethod)}</p>
+                <p><strong>{t.detalles.date}:</strong> {dateStr}</p>
+
+                <p>
+                  <strong>{t.detalles.total}:</strong> $
+                  {Number(elemento?.total) > 0 ? Number(elemento.total).toFixed(2) : "0.00"}
+                </p>
               </div>
+
               <div className="col-6">
-                <h5>{t.products}</h5>
-                {elemento.productos.length > 0 ? (
-                  elemento.productos.map((prod, i) => (
-                    <div key={i} className="mb-2 border-bottom pb-2">
-                      <p className="mb-1"><strong>{prod.nombre}</strong></p>
-                      <p className="mb-1">{t.quantity}: {prod.cantidad}</p>
-                      <p className="mb-1">{t.unitPrice}: ${prod.precio.toFixed(2)}</p>
-                      <p className="mb-0">{t.productTotal}: ${(prod.cantidad * prod.precio).toFixed(2)}</p>
-                    </div>
-                  ))
+                <h5>{safeText(t.products)}</h5>
+
+                {Array.isArray(elemento.productos) && elemento.productos.length > 0 ? (
+                  elemento.productos.map((prod, i) => {
+                    const nombre = safeText(prod?.nombre);
+                    const cantidad = Number(prod?.cantidad) > 0 ? prod.cantidad : 0;
+                    const precio = Number(prod?.precio) > 0 ? prod.precio : 0;
+
+                    return (
+                      <div key={i} className="mb-2 border-bottom pb-2">
+                        <p className="mb-1"><strong>{nombre}</strong></p>
+                        <p className="mb-1">{t.detalles.quantity}: {cantidad}</p>
+                        <p className="mb-1">{t.detalles.unitPrice}: ${precio.toFixed(2)}</p>
+                        <p className="mb-0">
+                          {t.detalles.productTotal}: {(cantidad * precio).toFixed(2)}
+                        </p>
+                      </div>
+                    );
+                  })
                 ) : (
-                  <p>{t.noProducts}</p>
+                  <p>{safeText(t.noProducts)}</p>
                 )}
               </div>
             </div>
           ) : (
+            /** ------------------------------
+             *   MODO PRODUCTO
+             * ------------------------------ */
             <div className="text-center">
-              {elemento.imagen && (
+              {isSafeImageUrl(elemento.imagen) && (
                 <img
                   src={elemento.imagen}
-                  alt={elemento.nombre}
+                  alt={safeText(elemento.nombre)}
                   className="img-fluid mb-3"
                   style={{ maxHeight: 120 }}
+                  loading="lazy"
                 />
               )}
-              <h5>{elemento.nombre}</h5>
+
+              <h5>{safeText(elemento.nombre)}</h5>
+
               <p className="text-success fw-bold">
-                ${(elemento.precio * (1 - (elemento.descuento || 0) / 100)).toFixed(2)}
+                $
+                {(
+                  Number(elemento.precio) *
+                  (1 - (Number(elemento.descuento) || 0) / 100)
+                ).toFixed(2)}
               </p>
 
               <div className="text-start">
-                <h6>{t.description}</h6>
+                <h6>{safeText(t.detalles.description)}</h6>
                 <p>
-                  {language === "es"
-                    ? (elemento.descripcionES || "–")
-                    : (elemento.descripcionEN || "–")}
+                  {safeText(
+                    language === "es"
+                      ? elemento.descripcionES || "–"
+                      : elemento.descripcionEN || "–"
+                  )}
                 </p>
 
-
-                {Array.isArray(elemento.ingredientes) && elemento.ingredientes.length > 0 && (
-                  <>
-                    <h6>{t.ingredients}</h6>
-                    <ul className="ps-3">
-                      {elemento.ingredientes.map((ing, idx) => <li key={idx}>{ing}</li>)}
-                    </ul>
-                  </>
-                )}
+                {Array.isArray(elemento.ingredientes) &&
+                  elemento.ingredientes.length > 0 && (
+                    <>
+                      <h6>{safeText(t.detalles.ingredients)}</h6>
+                      <ul className="ps-3">
+                        {elemento.ingredientes.map((ing, idx) => (
+                          <li key={idx}>{safeText(ing)}</li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
               </div>
             </div>
           )}
         </div>
       </ModalBody>
+
       <ModalFooter>
-        <Button color="primary" onClick={closeModal}>{t.accept}</Button>
+        <Button color="primary" onClick={closeModal}>
+          {safeText(t.detalles.accept)}
+        </Button>
       </ModalFooter>
     </Modal>
   );

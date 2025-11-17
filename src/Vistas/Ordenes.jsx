@@ -91,6 +91,7 @@ function Ordenes_Compras() {
   return (
     <div className="ordenes-compras-container">
       <TopNavBar />
+      <LogoutButton/>
       <Container>
         <h2>Órdenes de Compra</h2>
 

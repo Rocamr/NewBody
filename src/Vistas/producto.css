@@ -1,28 +1,95 @@
+/* Adaptación del grid si usas contenedores externos */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 15px;
+}
+
+/* Card general */
 .product-card {
-  width: 18rem;
-  margin: 10px;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  height: 100%;
+  background: #ffffff;
 }
 
-.product-card .card-title {
-  font-size: 1rem;
+/* Efecto hover elegante */
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
-.product-card .product-name {
-  font-weight: 500;
+/* Contenedor de imagen */
+.img-container {
+  width: 100%;
+  height: 180px;
+  background: #f7f7f7;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.product-card button svg {
-  vertical-align: middle;
-  font-size: 1.2em;
-}
-.product-card .card-img-top {
-  height: 200px;
+.img-container img {
+  max-height: 100%;
   object-fit: contain;
 }
 
+/* Título */
+.product-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  height: 42px;
+  overflow: hidden;
+}
+
+/* Precio */
+.price-section {
+  margin-bottom: 10px;
+}
+
+.price-tag {
+  font-size: 1rem;
+  padding: 6px 10px;
+}
+
+/* Acciones */
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.actions button svg {
+  font-size: 1.2em;
+}
+
+/* --- BREAKPOINTS --- */
+
+/* Tablets */
 @media (max-width: 768px) {
-  .product-card .card-img-top {
-    height: 280px; 
+  .img-container {
+    height: 200px;
+  }
+
+  .product-title {
+    font-size: 1.1rem;
   }
 }
 
+/* Móviles */
+@media (max-width: 480px) {
+  .img-container {
+    height: 210px;
+  }
+
+  .product-card {
+    padding: 3px;
+  }
+
+  .product-title {
+    font-size: 1rem;
+    height: auto;
+  }
+}
