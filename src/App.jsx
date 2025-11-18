@@ -7,6 +7,7 @@ import { CartProvider } from "./Vistas/CarritoContex.jsx";
 import { LanguageProvider } from "./Extras/LanguageContext.jsx";
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import Ordenes_Compras from "./Vistas/Ordenes.jsx";
+import Login from './Vistas/inicio.jsx';
 
 const App = () => {
   const theme = createTheme({
@@ -40,6 +41,7 @@ const App = () => {
                 <Route path="/carrito" element={<Cart />} />
                 <Route path="/productos" element={<ProductosControl />} />
                 <Route path="/ordenes" element={<Ordenes_Compras />} />
+                <Route path="/login" element={<Login />} />
               </Routes>
             </Router>
           </div>
