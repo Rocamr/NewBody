@@ -1,63 +1,35 @@
-import React, { createContext, useEffect, useState } from "react";
+import { createContext, useState } from "react";
+import { logSecurityEvent } from "../Back/securityLog";
 
 export const CartContext = createContext();
 
+const safeLoadCart = () => {
+  try {
+    const raw = localStorage.getItem("cart");
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
 export const CartProvider = ({ children }) => {
-  const [cart, setCart] = useState(() => {
-    const stored = localStorage.getItem('cart');
-    return stored ? JSON.parse(stored) : [];
-  });
+  const [cart, setCart] = useState(safeLoadCart);
 
-  const removeFromCart = (id) => {
-    setCart(cart.filter((item) => item.id !== id));
+  const addItem = (item) => {
+    const updated = [...cart, item];
+    setCart(updated);
+    localStorage.setItem("cart", JSON.stringify(updated));
   };
 
-  const addToCart = (product, quantity = 1) => {
-    const exists = cart.find((item) => item.id === product.id);
-    if (exists) {
-      setCart(
-        cart.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        )
-      );
-    } else {
-      setCart([...cart, { ...product, quantity }]);
-    }
+  const removeItem = (id) => {
+    const updated = cart.filter((i) => i.id !== id);
+    setCart(updated);
+    localStorage.setItem("cart", JSON.stringify(updated));
   };
-  useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
-  }, [cart]);
-  const increase = (id) => {
-    setCart(
-      cart.map((item) =>
-        item.id === id ? { ...item, quantity: item.quantity + 1 } : item
-      )
-    );
-  };
-
-  const decrease = (id) => {
-    setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.id === id && item.quantity > 1
-          ? { ...item, quantity: item.quantity - 1 }
-          : item
-      )
-    );
-  };
-
-  // Función para limpiar el carrito
-  const clearCart = () => {
-    setCart([]);
-    localStorage.removeItem('cart'); // <- limpia el almacenamiento
-  };
-
 
   return (
-    <CartContext.Provider
-      value={{ cart, addToCart, increase, decrease, removeFromCart, clearCart }}
-    >
+    <CartContext.Provider value={{ cart, addItem, removeItem }}>
       {children}
     </CartContext.Provider>
   );
