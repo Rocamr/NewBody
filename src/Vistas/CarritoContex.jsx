@@ -1,4 +1,5 @@
 import { createContext, useState } from "react";
+import { logSecurityEvent } from "../Back/securityLog";
 
 export const CartContext = createContext();
 
