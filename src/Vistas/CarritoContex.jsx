@@ -4,14 +4,31 @@ import { logSecurityEvent } from "../Back/securityLog";
 export const CartContext = createContext();
 
 const safeLoadCart = () => {
+  const raw = localStorage.getItem("cart");
+
+  if (!raw) return [];
+
   try {
-    const raw = localStorage.getItem("cart");
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
+
+    if (!Array.isArray(parsed)) {
+      logSecurityEvent("INVALID_CART_SHAPE", {
+        reason: "not_array",
+        rawSnippet: String(raw).slice(0, 80),
+      });
+      return [];
+    }
+
+    return parsed;
+  } catch (err) {
+    logSecurityEvent("INVALID_CART_JSON", {
+      message: err instanceof Error ? err.message : String(err),
+      rawSnippet: String(raw).slice(0, 80),
+    });
     return [];
   }
 };
+
 
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState(safeLoadCart);
