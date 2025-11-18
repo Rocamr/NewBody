@@ -18,6 +18,7 @@ import ModalEditar from "../Extras/modal-editar";
 import ModalCrear from "../Extras/modal-crear";
 import ModalEliminar from "../Extras/modal-eliminar";
 import "./tablas.css";
+import LogoutButton from "../Extras/extras";
 
 function ProductosControl() {
   const db = getFirestore();
@@ -111,6 +112,7 @@ function ProductosControl() {
   return (
     <Container>
       <TopNavBar />
+      <LogoutButton/>
       <h1>Productos</h1>
 
       <Button color="success" onClick={openModalCrear}>Crear</Button>

@@ -17,6 +17,8 @@
     "@emotion/styled": "^11.14.0",
     "@mui/material": "^7.1.1",
     "@mui/styles": "^6.4.12",
+    "@paypal/react-paypal-js": "^8.9.2",
+    "@stripe/stripe-js": "^8.4.0",
     "bootstrap": "^5.3.6",
     "date-fns": "^4.1.0",
     "emailjs-com": "^3.2.0",
