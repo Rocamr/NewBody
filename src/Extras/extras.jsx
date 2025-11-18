@@ -1,5 +1,20 @@
 import { useMemo } from "react";
-export const translations = {
+// src/components/translations.js
+// Helper para escapar HTML (saneamiento en cliente)
+export const escapeHtml = (unsafe) => {
+  if (unsafe === null || unsafe === undefined) return "";
+  const s = String(unsafe);
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
+// Lista de idiomas soportados
+const SUPPORTED_LANGS = ["es", "en"];
+export const translations  = {
   es: {
     // Navbar
     navbar: {
@@ -65,17 +80,20 @@ export const translations = {
       removeConfirm: "¿Eliminar este producto?",
       clearConfirm: "¿Vaciar el carrito?"
     },
-
-    // Órdenes / Modal
-    orders: {
-      details: "Detalles de la Orden",
+    //Modal detalles
+    detalles: {
+      title: "Detalles de la Orden",
       productDetails: "Detalles del Producto",
       buyerInfo: "Información del Comprador",
       name: "Nombre",
       email: "Email",
       phone: "Teléfono",
+      address: "Dirección",
+      paymentMethod: "Método de Pago",
       date: "Fecha",
+      total: "Total",
       products: "Productos",
+      quantity: "Cantidad",
       unitPrice: "Unitario",
       productTotal: "Total",
       noProducts: "No hay productos.",
@@ -151,17 +169,20 @@ export const translations = {
       removeConfirm: "Do you want to remove this product?",
       clearConfirm: "Are you sure you want to clear the cart?"
     },
-
-    // Orders / Modal
-    orders: {
-      details: "Order Details",
+    //Modal detalles
+    detalles: {
+      title: "Order Details",
       productDetails: "Product Details",
       buyerInfo: "Buyer Information",
       name: "Name",
       email: "Email",
       phone: "Phone",
+      address: "Address",
+      paymentMethod: "Payment Method",
       date: "Date",
+      total: "Total",
       products: "Products",
+      quantity: "Quantity",
       unitPrice: "Unit Price",
       productTotal: "Total",
       noProducts: "No products.",
@@ -171,6 +192,33 @@ export const translations = {
       notRegistered: "Not registered"
     }
   }
+};
+export const getSafeTranslations = (lang) => {
+  const selected = SUPPORTED_LANGS.includes(lang) ? translations[lang] : translations["es"];
+  // Recorrer y escapar solo valores string (recursively)
+  const safeClone = (obj) => {
+    if (obj === null || obj === undefined) return "";
+    if (typeof obj === "string") return escapeHtml(obj);
+    if (Array.isArray(obj)) return obj.map(safeClone);
+    if (typeof obj === "object") {
+      const out = {};
+      for (const k of Object.keys(obj)) out[k] = safeClone(obj[k]);
+      return out;
+    }
+    return String(obj);
+  };
+  return safeClone(selected);
+};
+
+// Validación simple de rutas internas: deben iniciar con "/" y no contener "//" que podría indicar esquema
+export const isValidInternalPath = (p) => {
+  if (!p || typeof p !== "string") return false;
+  // Reject absolute URLs or suspicious sequences
+  if (p.startsWith("http://") || p.startsWith("https://")) return false;
+  if (!p.startsWith("/")) return false;
+  if (p.includes("//")) return false;
+  // Optionally: check allowed route patterns (regex)
+  return true;
 };
 
 export const useCartTotals = (cart, country) => {
@@ -194,3 +242,31 @@ export const useCartTotals = (cart, country) => {
     };
   }, [cart, country]);
 };
+
+import { signOut } from "firebase/auth";
+import { auth } from "../Back/firebase";
+import { useNavigate } from "react-router-dom";
+
+export default function LogoutButton() {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      // Primero salir de la ruta protegida
+      navigate("/", { replace: true });
+
+      // Luego cerrar sesión
+      await signOut(auth);
+
+      console.log("Sesión cerrada correctamente");
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
+  };
+
+  return (
+    <button onClick={handleLogout}>
+      Cerrar sesión
+    </button>
+  );
+}
