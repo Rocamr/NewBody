@@ -1,39 +1,47 @@
 import { describe, it, expect, vi } from "vitest";
 
-// Mock de firebase/storage para evitar llamadas reales
+// Mock necesario para que firebase.js cargue sin quejarse
 vi.mock("firebase/storage", () => {
   return {
-    getStorage: vi.fn(() => ({})), // ESTA FALTABA
+    getStorage: vi.fn(() => ({})),
     ref: vi.fn((storage, path) => ({ storage, path })),
     uploadBytes: vi.fn(async () => {}),
-    getDownloadURL: vi.fn(async () => "https://fakeurl.test/file.png")
+    getDownloadURL: vi.fn(async () => "https://fakeurl.test/file.png"),
   };
 });
 
-// Importamos la función real existente
+// Importar función real corregida
 import { uploadImageToStorage } from "../src/Back/firebase.js";
 import { uploadBytes } from "firebase/storage";
 
-describe("uploadImageToStorage - PRUEBA ANTES DEL FIX", () => {
-  it("DEBERÍA rechazar archivos no imagen... pero NO lo hace (vulnerable)", async () => {
+// -------------------------------
+// PRUEBAS DESPUÉS DEL FIX
+// -------------------------------
+
+describe("uploadImageToStorage - PRUEBA DESPUÉS DEL FIX", () => {
+  it("rechaza archivos que NO son imágenes", async () => {
     const fakeFile = {
       name: "malware.exe",
       type: "application/x-msdownload",
-      size: 2048
+      size: 2048,
     };
 
-    let error = null;
+    await expect(uploadImageToStorage(fakeFile, "testFolder")).rejects.toThrow(
+      "Only image files are allowed"
+    );
 
-    try {
-      await uploadImageToStorage(fakeFile, "testFolder");
-    } catch (e) {
-      error = e;
-    }
-
-    // ❌ Esperábamos un error... pero la función vulnerable no lo lanza
-    expect(error).not.toBeNull();
-
-    // ❌ Y aun así intenta subirlo
     expect(uploadBytes).not.toHaveBeenCalled();
+  });
+
+  it("acepta una imagen válida", async () => {
+    const validFile = {
+      name: "foto.png",
+      type: "image/png",
+      size: 1024,
+    };
+
+    await uploadImageToStorage(validFile, "testFolder");
+
+    expect(uploadBytes).toHaveBeenCalled();
   });
 });
