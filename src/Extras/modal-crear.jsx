@@ -22,11 +22,10 @@ function ModalCrear({
 
   const [errors, setErrors] = useState({});
   const [form, setForm] = useState(initialForm);
+  const [mensajeError, setMensajeError] = useState("");
 
   // ================= VALIDACIONES =================
-  const esValorNegativo = (valor) => {
-    return Number(valor) < 0;
-  };
+  const esValorNegativo = (valor) => Number(valor) < 0;
 
   const contienePayloadPeligroso = (texto) => {
     if (!texto) return false;
@@ -37,7 +36,7 @@ function ModalCrear({
       /onerror\s*=/i,
       /onload\s*=/i,
       /javascript:/i,
-      /<.*?>/i // cualquier tag HTML
+      /<.*?>/i
     ];
 
     return patrones.some((rgx) => rgx.test(texto));
@@ -45,7 +44,7 @@ function ModalCrear({
 
   // ================= INGREDIENTES =================
   const addIngredient = () => {
-    setForm(f => ({ ...f, ingredientes: [...(f.ingredientes||[]), ""] }));
+    setForm(f => ({ ...f, ingredientes: [...(f.ingredientes || []), ""] }));
   };
 
   const removeIngredient = i => {
@@ -57,7 +56,7 @@ function ModalCrear({
 
   const handleIngredientChange = (i, value) => {
     setForm(f => {
-      const ing = [...(f.ingredientes||[])];
+      const ing = [...(f.ingredientes || [])];
       ing[i] = value;
       return { ...f, ingredientes: ing };
     });
@@ -71,14 +70,14 @@ function ModalCrear({
   const resetForm = () => {
     setForm(initialForm);
     setErrors({});
+    setMensajeError("");
   };
 
   // ================= HANDLE CHANGE =================
   const handleChange = async (e) => {
     const { name, type, value, files } = e.target;
 
-    // === ARCHIVO / IMAGEN ===
-    if (type === "file" && ["image","foto","imagen"].includes(name.toLowerCase())) {
+    if (type === "file" && ["image", "foto", "imagen"].includes(name.toLowerCase())) {
       try {
         const file = files[0];
         if (file) {
@@ -92,7 +91,6 @@ function ModalCrear({
       return;
     }
 
-    // === NÚMEROS NEGATIVOS ===
     if (["precio", "codigobarras", "descuento"].includes(name)) {
       if (esValorNegativo(value)) {
         setErrors(prev => ({ ...prev, [name]: "No se permiten valores negativos." }));
@@ -101,7 +99,6 @@ function ModalCrear({
       }
     }
 
-    // === XSS / PAYLOADS ===
     if (["descripcionES", "descripcionEN"].includes(name)) {
       if (contienePayloadPeligroso(value)) {
         setErrors(prev => ({ ...prev, [name]: "Contenido inválido detectado." }));
@@ -109,20 +106,46 @@ function ModalCrear({
       }
     }
 
-    // === VALIDACIÓN NORMAL ===
     setErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  // ================= CREAR =================
+  // ================= CREAR (VALIDACIÓN REAL) =================
+  const crear = async () => {
+    setMensajeError("");
+
+    const camposRequeridos = ["nombre", "precio", "codigobarras", "descripcionES", "descripcionEN"];
+
+    // Revisar errores actuales
+    const hayErrores = Object.values(errors).some(e => e && e !== "");
+    if (hayErrores) {
+      setMensajeError("El producto no se creó porque hay errores en el formulario.");
+      return;
+    }
+
+    // Revisar campos requeridos vacíos
+    for (const campo of camposRequeridos) {
+      if (!form[campo] || form[campo].toString().trim() === "") {
+        setErrors(prev => ({ ...prev, [campo]: "Este campo es obligatorio." }));
+        setMensajeError("El producto no se creó porque faltan campos obligatorios.");
+        return;
+      }
+    }
+
+    // Validación numérica
+    if (Number(form.precio) < 0 || Number(form.codigobarras) < 0) {
+      setMensajeError("El producto no se creó porque los valores numéricos no son válidos.");
+      return;
+    }
+
+    // Si pasa todas las validaciones, entonces sí se crea
+    await FuntionCreate(form);
+    cerrarModalCrear();
+  };
+
   const cerrarModalCrear = () => {
     resetForm();
     closeModal();
-  };
-
-  const crear = async () => {
-    await FuntionCreate(form);
-    cerrarModalCrear();
   };
 
   // ================= RENDER =================
@@ -131,7 +154,12 @@ function ModalCrear({
       <ModalHeader toggle={cerrarModalCrear}>
         <h3>Crear Producto / Orden</h3>
       </ModalHeader>
+
       <ModalBody>
+
+        {mensajeError && (
+          <div className="alert alert-danger text-center">{mensajeError}</div>
+        )}
 
         {Object.entries(fieldOrder).map(([_, key]) => (
           <FormGroup key={key} className={errors[key] ? "error" : ""}>
@@ -139,12 +167,22 @@ function ModalCrear({
 
             {key.toLowerCase().includes("imagen") ? (
               <input type="file" name={key} accept="image/*" onChange={handleChange}/>
-            ) : ["precio","descuento"].includes(key) ? (
-              <input type="number" name={key} value={form[key]||""}
-                     onChange={handleChange} className="form-control"/>
+            ) : ["precio", "descuento"].includes(key) ? (
+              <input
+                type="number"
+                name={key}
+                value={form[key] || ""}
+                onChange={handleChange}
+                className="form-control"
+              />
             ) : (
-              <input type="text" name={key} value={form[key]||""}
-                     onChange={handleChange} className="form-control"/>
+              <input
+                type="text"
+                name={key}
+                value={form[key] || ""}
+                onChange={handleChange}
+                className="form-control"
+              />
             )}
 
             {errors[key] && <div className="error">{errors[key]}</div>}
@@ -154,7 +192,7 @@ function ModalCrear({
         {/* Ingredientes dinámicos */}
         <FormGroup>
           <label>Ingredientes:</label>
-          {(form.ingredientes||[]).map((ing, i) => (
+          {(form.ingredientes || []).map((ing, i) => (
             <div key={i} className="d-flex mb-2">
               <input
                 type="text"
@@ -175,8 +213,16 @@ function ModalCrear({
       </ModalBody>
 
       <ModalFooter>
-        <Button color="primary" onClick={crear}>Crear</Button>
-        <Button color="secondary" onClick={cerrarModalCrear}>Cancelar</Button>
+        <Button
+          color="primary"
+          onClick={crear}
+        >
+          Crear
+        </Button>
+
+        <Button color="secondary" onClick={cerrarModalCrear}>
+          Cancelar
+        </Button>
       </ModalFooter>
 
     </Modal>
