@@ -2,11 +2,9 @@ import emailjs from "emailjs-com";
 import Swal from "sweetalert2";
 import { wasa_email} from "../Back/emaill_data";
 
-// Función para enviar el correo de confirmación
 const sendConfirmationEmail = (cart, total, buyer, showAlert) => {
   const orderId = Math.floor(Math.random() * 1000000);
 
-  // Armar los detalles de la orden para EmailJS
   const orderDetails = cart.map(item => ({
     image_url: item.imagen,
     name: item.nombre,
@@ -26,12 +24,13 @@ const sendConfirmationEmail = (cart, total, buyer, showAlert) => {
     }
   };
 
+  
   // Enviar el correo con EmailJS
   emailjs.send(
-    wasa_email.servicio, // ID del servicio
-    wasa_email.template, // ID de la plantilla
+    wasa_email.servicio, 
+    wasa_email.template, 
     emailParams,
-    wasa_email.llave // User/public key
+    wasa_email.llave
   )
   .then(() => {
     console.log("Correo enviado con éxito");
