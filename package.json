@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test:e2e": "playwright test",
-    "test": "vitest"
+    "test": "vitest --run"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
