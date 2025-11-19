@@ -1,30 +1,88 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-// Mock correcto: esta ruta DEBE coincidir con el import real dentro de ProductosControl.jsx
+// Mock Navbar
 vi.mock("../src/Extras/navbar.jsx", () => ({
-  default: () => <div data-testid="navbar-mock" />
+  default: () => <div data-testid="navbar-mock"></div>
 }));
 
-// Importamos tu componente real
+// Mock Firestore
+vi.mock("firebase/firestore", () => {
+  return {
+    getFirestore: vi.fn(() => ({})),
+    collection: vi.fn(),
+    getDocs: vi.fn(),
+    addDoc: vi.fn(),
+    updateDoc: vi.fn(),
+    deleteDoc: vi.fn(),
+    doc: vi.fn(),
+    query: vi.fn(),
+    where: vi.fn()
+  };
+});
+
+import { getDocs } from "firebase/firestore";
 import ProductosControl from "../src/Vistas/ProductosControl.jsx";
 
-describe("ProductosControl - PRUEBA ANTES DEL FIX", () => {
-  it("DEBERÍA bloquear URLs externas maliciosas... pero NO lo hace (vulnerable)", () => {
+// Reset mocks before each test
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
-    const fakeProduct = {
+describe("ProductosControl - PRUEBA DESPUÉS DEL FIX", () => {
+
+  it("bloquea URLs externas no autorizadas", async () => {
+
+    const productoMalicioso = {
       id: "123",
-      nombre: "Producto Test",
-      descripcion: "Desc",
-      imagen: "https://malicioso.com/track"
+      data: () => ({
+        nombre: "Test",
+        precio: 100,
+        descuento: 0,
+        descripcionES: "desc",
+        descripcionEN: "desc",
+        codigobarras: "111",
+        imagen: "https://malicioso.com/track"
+      })
     };
 
-    render(<ProductosControl productos={[fakeProduct]} />);
+    // React ejecuta el useEffect DOS veces → dos mocks
+    getDocs
+      .mockResolvedValueOnce({ docs: [productoMalicioso] })
+      .mockResolvedValueOnce({ docs: [productoMalicioso] });
 
-    // Esperaríamos en una versión segura que NO se renderice la imagen
-    const img = screen.queryByRole("img");
+    render(<ProductosControl />);
 
-    // Pero la versión vulnerable la renderiza -> generamos fallo
-    expect(img).toBeNull();
+    const msg = await screen.findByText(/Imagen no válida/i);
+    expect(msg).toBeTruthy();
+
+    const badImg = screen.queryByRole("img");
+    expect(badImg).toBeNull();
+  });
+
+  it("permite imágenes válidas del dominio autorizado", async () => {
+
+    const productoValido = {
+      id: "456",
+      data: () => ({
+        nombre: "TestOK",
+        precio: 50,
+        descuento: 0,
+        descripcionES: "desc",
+        descripcionEN: "desc",
+        codigobarras: "222",
+        imagen: "https://firebasestorage.googleapis.com/imagen.png"
+      })
+    };
+
+    // React ejecuta el useEffect DOS veces → dos mocks
+    getDocs
+      .mockResolvedValueOnce({ docs: [productoValido] })
+      .mockResolvedValueOnce({ docs: [productoValido] });
+
+    render(<ProductosControl />);
+
+    const img = await screen.findByRole("img");
+    expect(img).not.toBeNull();
   });
 });

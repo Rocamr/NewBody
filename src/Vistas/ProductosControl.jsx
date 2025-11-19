@@ -10,7 +10,7 @@ import {
   doc,
   query,
   where,
-  deleteDoc
+  deleteDoc,
 } from "firebase/firestore";
 import { useModal } from "../Back/useModal";
 import TopNavBar from "../Extras/navbar";
@@ -25,32 +25,52 @@ function ProductosControl() {
   const [currentPage, setCurrentPage] = useState(1);
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
   const [imageFile, setImageFile] = useState(null);
-  const [alertData, setAlertData] = useState({ show: false, text: "", type: "" });
+  const [alertData, setAlertData] = useState({
+    show: false,
+    text: "",
+    type: "",
+  });
   const [allProducts, setAllProducts] = useState([]);
   const [pageProducts, setPageProducts] = useState([]);
   const [sortBy, setSortBy] = useState("");
   const perPage = 10;
 
-  const [isOpenActualizar, openModalActualizar, closeModalActualizar] = useModal(false);
+  const [isOpenActualizar, openModalActualizar, closeModalActualizar] =
+    useModal(false);
   const [isOpenCrear, openModalCrear, closeModalCrear] = useModal(false);
-  const [isOpenEliminar, openModalEliminar, closeModalEliminar] = useModal(false);
+  const [isOpenEliminar, openModalEliminar, closeModalEliminar] =
+    useModal(false);
+
+  // FIX SEGURIDAD: Validar origen de imagen
+  const isTrustedURL = (url) => {
+    try {
+      const u = new URL(url);
+      return (
+        u.protocol === "https:" &&
+        u.hostname.endsWith("firebasestorage.googleapis.com")
+      );
+    } catch {
+      return false;
+    }
+  };
 
   // Fetch all
   useEffect(() => {
     const fetchAll = async () => {
       const snap = await getDocs(collection(db, "Productos"));
-      setAllProducts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setAllProducts(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     };
     fetchAll();
   }, [db]);
 
   // filter, sort, paginate
   useEffect(() => {
-    let filtered = allProducts.filter(p =>
+    let filtered = allProducts.filter((p) =>
       p.nombre.toLowerCase().includes(searchQuery.toLowerCase())
     );
     if (sortBy === "precio") filtered.sort((a, b) => a.precio - b.precio);
-    if (sortBy === "descuento") filtered.sort((a, b) => a.descuento - b.descuento);
+    if (sortBy === "descuento")
+      filtered.sort((a, b) => a.descuento - b.descuento);
     const start = (currentPage - 1) * perPage;
     setPageProducts(filtered.slice(start, start + perPage));
   }, [allProducts, searchQuery, sortBy, currentPage]);
@@ -61,31 +81,44 @@ function ProductosControl() {
   };
 
   // CRUD handlers (abrir modals)
-  const abrirModalActualizar = p => { setProductoSeleccionado(p); setImageFile(null); openModalActualizar(); };
-  const abrirModalEliminar = p => { setProductoSeleccionado(p); setImageFile(null); openModalEliminar(); };
+  const abrirModalActualizar = (p) => {
+    setProductoSeleccionado(p);
+    setImageFile(null);
+    openModalActualizar();
+  };
+
+  const abrirModalEliminar = (p) => {
+    setProductoSeleccionado(p);
+    setImageFile(null);
+    openModalEliminar();
+  };
 
   // Edit
-  const editar = async form => {
-    const q = query(collection(db, "Productos"), where("codigobarras", "==", productoSeleccionado.codigobarras));
+  const editar = async (form) => {
+    const q = query(
+      collection(db, "Productos"),
+      where("codigobarras", "==", productoSeleccionado.codigobarras)
+    );
     const snap = await getDocs(q);
     const idDoc = snap.docs[0]?.id;
     if (!idDoc) return;
+
     await updateDoc(doc(db, "Productos", idDoc), {
       nombre: form.nombre,
       precio: parseFloat(form.precio),
       descripcionEN: form.descripcionEN,
       descripcionES: form.descripcionES,
       descuento: parseFloat(form.descuento),
-      imagen: imageFile || form.imagen
+      imagen: imageFile || form.imagen,
     });
-    // refetch
+
     const snap2 = await getDocs(collection(db, "Productos"));
-    setAllProducts(snap2.docs.map(d => ({ id: d.id, ...d.data() })));
+    setAllProducts(snap2.docs.map((d) => ({ id: d.id, ...d.data() })));
     mostrarAlerta("Producto modificado con éxito", "success");
   };
 
   // Create
-  const crearProducto = async form => {
+  const crearProducto = async (form) => {
     await addDoc(collection(db, "Productos"), {
       nombre: form.nombre,
       codigobarras: parseFloat(form.codigobarras),
@@ -93,10 +126,11 @@ function ProductosControl() {
       descuento: parseFloat(form.descuento),
       imagen: imageFile || form.imagen || "",
       descripcionEN: form.descripcionEN,
-      descripcionES: form.descripcionES
+      descripcionES: form.descripcionES,
     });
+
     const snap2 = await getDocs(collection(db, "Productos"));
-    setAllProducts(snap2.docs.map(d => ({ id: d.id, ...d.data() })));
+    setAllProducts(snap2.docs.map((d) => ({ id: d.id, ...d.data() })));
     mostrarAlerta("Producto creado con éxito", "success");
   };
 
@@ -104,7 +138,7 @@ function ProductosControl() {
   const eliminarProducto = async () => {
     await deleteDoc(doc(db, "Productos", productoSeleccionado.id));
     const snap2 = await getDocs(collection(db, "Productos"));
-    setAllProducts(snap2.docs.map(d => ({ id: d.id, ...d.data() })));
+    setAllProducts(snap2.docs.map((d) => ({ id: d.id, ...d.data() })));
     mostrarAlerta("Producto eliminado con éxito", "success");
   };
 
@@ -113,15 +147,29 @@ function ProductosControl() {
       <TopNavBar />
       <h1>Productos</h1>
 
-      <Button color="success" onClick={openModalCrear}>Crear</Button>
+      <Button color="success" onClick={openModalCrear}>
+        Crear
+      </Button>
       {alertData.show && <Alert color={alertData.type}>{alertData.text}</Alert>}
 
       <div className="d-flex my-3 gap-2">
-        <input className="form-control" placeholder="Buscar por nombre" value={searchQuery}
-          onChange={e => { setCurrentPage(1); setSearchQuery(e.target.value) }} />
-        <select className="form-select w-auto"
+        <input
+          className="form-control"
+          placeholder="Buscar por nombre"
+          value={searchQuery}
+          onChange={(e) => {
+            setCurrentPage(1);
+            setSearchQuery(e.target.value);
+          }}
+        />
+        <select
+          className="form-select w-auto"
           value={sortBy}
-          onChange={e => { setCurrentPage(1); setSortBy(e.target.value) }}>
+          onChange={(e) => {
+            setCurrentPage(1);
+            setSortBy(e.target.value);
+          }}
+        >
           <option value="">Ordenar</option>
           <option value="precio">Precio</option>
           <option value="descuento">Descuento</option>
@@ -131,24 +179,43 @@ function ProductosControl() {
       <Table className="table-custom" responsive>
         <thead>
           <tr>
-            <th>Nombre</th><th>Precio</th><th>Descuento</th>
-            <th>Imagen</th><th>Desc ES</th><th>Desc EN</th>
-            <th>CB</th><th>Acciones</th>
+            <th>Nombre</th>
+            <th>Precio</th>
+            <th>Descuento</th>
+            <th>Imagen</th>
+            <th>Desc ES</th>
+            <th>Desc EN</th>
+            <th>CB</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {pageProducts.map(p => (
+          {pageProducts.map((p) => (
             <tr key={p.id}>
               <td>{p.nombre}</td>
               <td>{p.precio}</td>
               <td>{p.descuento}</td>
-              <td><img src={p.imagen} alt="" width="40" height="40" /></td>
+
+              {/* FIX: Imagen valida y segura */}
+              <td>
+                {isTrustedURL(p.imagen) ? (
+                  <img src={p.imagen} alt={p.nombre} width="40" height="40" />
+                ) : (
+                  <p>Imagen no válida</p>
+                )}
+              </td>
+
               <td className="descripcion">{p.descripcionES}</td>
               <td className="descripcion">{p.descripcionEN}</td>
               <td>{p.codigobarras}</td>
+
               <td>
-                <Button size="sm" onClick={() => abrirModalActualizar(p)}>Editar</Button>{' '}
-                <Button size="sm" onClick={() => abrirModalEliminar(p)}>Eliminar</Button>
+                <Button size="sm" onClick={() => abrirModalActualizar(p)}>
+                  Editar
+                </Button>{" "}
+                <Button size="sm" onClick={() => abrirModalEliminar(p)}>
+                  Eliminar
+                </Button>
               </td>
             </tr>
           ))}
@@ -156,35 +223,77 @@ function ProductosControl() {
       </Table>
 
       <div className="my-3 d-flex align-items-center gap-2">
-        <Button disabled={currentPage === 1} onClick={() => setCurrentPage(c => c - 1)}>Anterior</Button>
+        <Button
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage((c) => c - 1)}
+        >
+          Anterior
+        </Button>
         <span>Página {currentPage}</span>
-        <Button disabled={pageProducts.length < perPage} onClick={() => setCurrentPage(c => c + 1)}>Siguiente</Button>
+        <Button
+          disabled={pageProducts.length < perPage}
+          onClick={() => setCurrentPage((c) => c + 1)}
+        >
+          Siguiente
+        </Button>
       </div>
 
       <ModalCrear
-        isOpenA={isOpenCrear} closeModal={closeModalCrear}
+        isOpenA={isOpenCrear}
+        closeModal={closeModalCrear}
         validateField={() => ({})}
         FuntionCreate={crearProducto}
-        initialForm={{ nombre: '', codigobarras: '', precio: 0, descuento: 0, imagen: '', descripcionEN: '', descripcionES: '', ingredientesES: [], ingredientesEN: [] }}
-        fieldOrder={{ 1: 'nombre', 2: 'codigobarras', 3: 'precio', 4: 'descuento', 5: 'imagen', 6: 'descripcionEN', 7: 'descripcionES',8: 'ingredientesES', 9: 'ingredientesEN' }}
+        initialForm={{
+          nombre: "",
+          codigobarras: "",
+          precio: 0,
+          descuento: 0,
+          imagen: "",
+          descripcionEN: "",
+          descripcionES: "",
+          ingredientesES: [],
+          ingredientesEN: [],
+        }}
+        fieldOrder={{
+          1: "nombre",
+          2: "codigobarras",
+          3: "precio",
+          4: "descuento",
+          5: "imagen",
+          6: "descripcionEN",
+          7: "descripcionES",
+          8: "ingredientesES",
+          9: "ingredientesEN",
+        }}
         setImageFile={setImageFile}
       />
 
       <ModalEditar
-        isOpenA={isOpenActualizar} closeModal={closeModalActualizar}
+        isOpenA={isOpenActualizar}
+        closeModal={closeModalActualizar}
         elemento={productoSeleccionado}
         validateField={() => ({})}
         FuntionEdit={editar}
-        fieldOrder={{ 1: 'nombre', 2: 'precio', 3: 'descuento', 4: 'imagen', 5: 'descripcionEN', 6: 'descripcionES', 7: 'ingredientesES', 8: 'ingredientesEN' }}
-        nombreCrud="Producto" setImageFile={setImageFile}
+        fieldOrder={{
+          1: "nombre",
+          2: "precio",
+          3: "descuento",
+          4: "imagen",
+          5: "descripcionEN",
+          6: "descripcionES",
+          7: "ingredientesES",
+          8: "ingredientesEN",
+        }}
+        nombreCrud="Producto"
+        setImageFile={setImageFile}
       />
 
       <ModalEliminar
-        isOpen={isOpenEliminar}            // coincide con la prop `isOpen`
-        closeModal={closeModalEliminar}    // coincide con `closeModal`
-        elemento={productoSeleccionado}    // datos del item
-        nombreCrud="Producto"              // texto dinámico
-        onDelete={eliminarProducto}        // coincide con `onDelete`
+        isOpen={isOpenEliminar}
+        closeModal={closeModalEliminar}
+        elemento={productoSeleccionado}
+        nombreCrud="Producto"
+        onDelete={eliminarProducto}
       />
     </Container>
   );
