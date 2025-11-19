@@ -16,14 +16,39 @@ const firebaseConfig = {
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const storage = getStorage(app); 
+const storage = getStorage(app);
 
-// Función para subir imágenes a Firebase Storage
+// -------------------------------
+// FIX DE SEGURIDAD
+// Validación estricta antes de subir archivos
+// -------------------------------
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB máximo
+
 const uploadImageToStorage = async (file, folderName) => {
-  const storageRef = ref(storage, `${folderName}/${file.name}`);
+  // 1. Validar existencia
+  if (!file || !file.type || !file.name) {
+    throw new Error("Invalid file");
+  }
+
+  // 2. Validar tipo MIME
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Only image files are allowed");
+  }
+
+  // 3. Validar tamaño
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error("Image file too large");
+  }
+
+  // 4. Sanitizar nombre
+  const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "");
+
+  const storageRef = ref(storage, `${folderName}/${safeName}`);
   await uploadBytes(storageRef, file);
   const downloadURL = await getDownloadURL(storageRef);
+
   return downloadURL;
 };
 
-export { app,  db, storage, uploadImageToStorage };
+export { app, db, storage, uploadImageToStorage };
