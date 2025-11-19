@@ -19,27 +19,50 @@ function ModalCrear({
   fieldOrder,
   setImageFile
 }) {
+
   const [errors, setErrors] = useState({});
   const [form, setForm] = useState(initialForm);
+  const [mensajeError, setMensajeError] = useState("");
 
-  // Ingredientes handlers
-  const addIngredient = () => {
-    setForm(f => ({ ...f, ingredientes: [...(f.ingredientes||[]), ""] }));
+  // ================= VALIDACIONES =================
+  const esValorNegativo = (valor) => Number(valor) < 0;
+
+  const contienePayloadPeligroso = (texto) => {
+    if (!texto) return false;
+
+    const patrones = [
+      /<script.*?>/i,
+      /<\/script>/i,
+      /onerror\s*=/i,
+      /onload\s*=/i,
+      /javascript:/i,
+      /<.*?>/i
+    ];
+
+    return patrones.some((rgx) => rgx.test(texto));
   };
+
+  // ================= INGREDIENTES =================
+  const addIngredient = () => {
+    setForm(f => ({ ...f, ingredientes: [...(f.ingredientes || []), ""] }));
+  };
+
   const removeIngredient = i => {
     setForm(f => ({
       ...f,
       ingredientes: f.ingredientes.filter((_, idx) => idx !== i)
     }));
   };
+
   const handleIngredientChange = (i, value) => {
     setForm(f => {
-      const ing = [...(f.ingredientes||[])];
+      const ing = [...(f.ingredientes || [])];
       ing[i] = value;
       return { ...f, ingredientes: ing };
     });
   };
 
+  // ================= EFFECT =================
   useEffect(() => {
     if (!isOpenA) resetForm();
   }, [isOpenA]);
@@ -47,13 +70,16 @@ function ModalCrear({
   const resetForm = () => {
     setForm(initialForm);
     setErrors({});
+    setMensajeError("");
   };
 
+  // ================= HANDLE CHANGE =================
   const handleChange = async (e) => {
-    const { name, type } = e.target;
-    if (type === "file" && ["image","foto","imagen"].includes(name.toLowerCase())) {
+    const { name, type, value, files } = e.target;
+
+    if (type === "file" && ["image", "foto", "imagen"].includes(name.toLowerCase())) {
       try {
-        const file = e.target.files[0];
+        const file = files[0];
         if (file) {
           const imageUrl = await uploadImageToStorage(file, "ImagenesProductos");
           setImageFile(imageUrl);
@@ -62,11 +88,59 @@ function ModalCrear({
       } catch (error) {
         console.error(error);
       }
-    } else {
-      const { value } = e.target;
-      setForm(prev => ({ ...prev, [name]: value }));
-      setErrors(validateField(name, value));
+      return;
     }
+
+    if (["precio", "codigobarras", "descuento"].includes(name)) {
+      if (esValorNegativo(value)) {
+        setErrors(prev => ({ ...prev, [name]: "No se permiten valores negativos." }));
+        setForm(prev => ({ ...prev, [name]: "" }));
+        return;
+      }
+    }
+
+    if (["descripcionES", "descripcionEN"].includes(name)) {
+      if (contienePayloadPeligroso(value)) {
+        setErrors(prev => ({ ...prev, [name]: "Contenido inválido detectado." }));
+        return;
+      }
+    }
+
+    setErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  // ================= CREAR (VALIDACIÓN REAL) =================
+  const crear = async () => {
+    setMensajeError("");
+
+    const camposRequeridos = ["nombre", "precio", "codigobarras", "descripcionES", "descripcionEN"];
+
+    // Revisar errores actuales
+    const hayErrores = Object.values(errors).some(e => e && e !== "");
+    if (hayErrores) {
+      setMensajeError("El producto no se creó porque hay errores en el formulario.");
+      return;
+    }
+
+    // Revisar campos requeridos vacíos
+    for (const campo of camposRequeridos) {
+      if (!form[campo] || form[campo].toString().trim() === "") {
+        setErrors(prev => ({ ...prev, [campo]: "Este campo es obligatorio." }));
+        setMensajeError("El producto no se creó porque faltan campos obligatorios.");
+        return;
+      }
+    }
+
+    // Validación numérica
+    if (Number(form.precio) < 0 || Number(form.codigobarras) < 0) {
+      setMensajeError("El producto no se creó porque los valores numéricos no son válidos.");
+      return;
+    }
+
+    // Si pasa todas las validaciones, entonces sí se crea
+    await FuntionCreate(form);
+    cerrarModalCrear();
   };
 
   const cerrarModalCrear = () => {
@@ -74,28 +148,43 @@ function ModalCrear({
     closeModal();
   };
 
-  const crear = async () => {
-    await FuntionCreate(form);
-    cerrarModalCrear();
-  };
-
+  // ================= RENDER =================
   return (
     <Modal isOpen={isOpenA} toggle={cerrarModalCrear} backdrop="static">
       <ModalHeader toggle={cerrarModalCrear}>
         <h3>Crear Producto / Orden</h3>
       </ModalHeader>
+
       <ModalBody>
-        {/* Campos autogenerados */}
+
+        {mensajeError && (
+          <div className="alert alert-danger text-center">{mensajeError}</div>
+        )}
+
         {Object.entries(fieldOrder).map(([_, key]) => (
           <FormGroup key={key} className={errors[key] ? "error" : ""}>
             <label>{key}</label>
+
             {key.toLowerCase().includes("imagen") ? (
               <input type="file" name={key} accept="image/*" onChange={handleChange}/>
-            ) : ["precio","descuento"].includes(key) ? (
-              <input type="number" name={key} value={form[key]||""} onChange={handleChange} className="form-control"/>
+            ) : ["precio", "descuento"].includes(key) ? (
+              <input
+                type="number"
+                name={key}
+                value={form[key] || ""}
+                onChange={handleChange}
+                className="form-control"
+              />
             ) : (
-              <input type="text" name={key} value={form[key]||""} onChange={handleChange} className="form-control"/>
+              <input
+                type="text"
+                name={key}
+                value={form[key] || ""}
+                onChange={handleChange}
+                className="form-control"
+              />
             )}
+
             {errors[key] && <div className="error">{errors[key]}</div>}
           </FormGroup>
         ))}
@@ -103,7 +192,7 @@ function ModalCrear({
         {/* Ingredientes dinámicos */}
         <FormGroup>
           <label>Ingredientes:</label>
-          {(form.ingredientes||[]).map((ing, i) => (
+          {(form.ingredientes || []).map((ing, i) => (
             <div key={i} className="d-flex mb-2">
               <input
                 type="text"
@@ -122,10 +211,20 @@ function ModalCrear({
           </Button>
         </FormGroup>
       </ModalBody>
+
       <ModalFooter>
-        <Button color="primary" onClick={crear}>Crear</Button>
-        <Button color="secondary" onClick={cerrarModalCrear}>Cancelar</Button>
+        <Button
+          color="primary"
+          onClick={crear}
+        >
+          Crear
+        </Button>
+
+        <Button color="secondary" onClick={cerrarModalCrear}>
+          Cancelar
+        </Button>
       </ModalFooter>
+
     </Modal>
   );
 }
